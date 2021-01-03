@@ -1,8 +1,12 @@
 require 'csv'
+require 'terminal-table'
 require 'pry'
+require './lib/find'
+require './lib/queue'
 
 class Reporter
-  
+  include Queue_commands, Find
+
   def initialize()
      @queue = []
   end
@@ -32,29 +36,37 @@ class Reporter
         sleep(1)
         load_file
       end
+    holder = []
+    CSV.foreach(file, headers: true, header_converters: :symbol){|row| holder << row}
+    welcome_message(holder)
   end
 
-  def welcome_message
-    holder = []
-    CSV.foreach("#{load_file}", headers: true, header_converters: :symbol){|row| holder << row}
+  def welcome_message(holder)
     
     contents = clean_initial_data(holder)
     headers = contents[0].headers[1..-1].map{|header| header.to_s} 
-    puts "*********************************************************************"
+    puts "*********************************************************************\n"
     puts "This program works by the user entering commands and the program will then narrow down the list of attendees based on user input."
     puts "To start narrowing down from the full attendees list enter 'find <attribute> <criteria>' (ie: find first_name john).  Attributes are:"
     p     headers
     puts ""
     puts "After that a queue will be created of everyone who matches that specific criteria."  
-    puts "If you run 'find <attribute> <criteria>' twice it will include everyone who matches BOTH sets of criteria"
+    puts "If you run 'find <attribute> <criteria>' more than one it will include everyone who matches ALL sets of criteria"
     puts ""
-    puts "Queue commands: queue count, queue clear, queue print, queue print by <attribute>, queue save to <filename.csv>, queue export html <filenmae.csv>"
+    puts "Queue commands:" 
+    puts "queue count, queue clear, queue print, queue print by <attribute>, queue save to <filename.csv>, queue export html <filenmae.csv>"
     puts "At any time you can enter 'help' to see this list again or 'help <command>' (ie: help queue print) for an explanation of commands."
     puts "Please enter your command below >>>"
     command = gets.chomp
-    # query = @find.find_method(contents)
-    # query = @queue.start(query)
-    # run_command(command, contents)
+    command = command.downcase.strip
+    run_command(command, contents)
+  end
+
+  def second_message(contents)
+    puts "\n Enter Command >>"
+    command = gets.chomp
+    command = command.downcase
+    run_command(command, contents)
   end
 
 
@@ -72,16 +84,34 @@ class Reporter
   end
 
   def run_command(command, contents)
-    execute = command.split(" ", 3)
-    if execute.first == "find"
-      @find.find_method(execute, contents)
+    execute = command.split
+    
+    if execute.first == "find" && check_inputed_attribute_is_valid(execute, contents)
+      query = filter_for_data(command, contents)
+      add_to_queue(query)
+      second_message(contents)
+    elsif command.strip == "quit" 
+        puts "Goodbye"
+    elsif execute.first == "queue" && execute.length == 2
+      queue_count_clear_or_print(execute, contents)
+      second_message(contents)
+    elsif execute.first == "queue" && execute.length == 4 
+      queue_print_by_save_to_or_export_html(execute, contents)
+      second_message(contents)
     end
     
   end
 
+  
+
+  def add_to_queue(query)
+    query.map do |row|
+      @queue << row
+    end
+  end
 
 
 end
 
 cat = Reporter.new
-cat.welcome_message
+cat.load_file
