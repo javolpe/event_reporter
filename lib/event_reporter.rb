@@ -3,9 +3,10 @@ require 'terminal-table'
 require 'pry'
 require './lib/find'
 require './lib/queue'
+require './lib/help'
 
 class Reporter
-  include Queue_commands, Find
+  include Queue_commands, Find, Help
 
   def initialize()
      @queue = []
@@ -54,8 +55,9 @@ class Reporter
     puts "If you run 'find <attribute> <criteria>' more than one it will include everyone who matches ALL sets of criteria"
     puts ""
     puts "Queue commands:" 
-    puts "queue count, queue clear, queue print, queue print by <attribute>, queue save to <filename.csv>, queue export html <filenmae.csv>"
+    puts "queue count, queue clear, queue print, queue print by <attribute>, queue save to <filename.csv>, queue export html <filename.csv>"
     puts "At any time you can enter 'help' to see this list again or 'help <command>' (ie: help queue print) for an explanation of commands."
+    puts "Enter 'quit' to exit."
     puts "Please enter your command below >>>"
     command = gets.chomp
     command = command.downcase.strip
@@ -63,7 +65,7 @@ class Reporter
   end
 
   def second_message(contents)
-    puts "\n Enter Command >>"
+    puts "\nEnter Command >>"
     command = gets.chomp
     command = command.downcase
     run_command(command, contents)
@@ -97,6 +99,15 @@ class Reporter
       second_message(contents)
     elsif execute.first == "queue" && execute.length == 4 
       queue_print_by_save_to_or_export_html(execute, contents)
+      second_message(contents)
+    elsif execute.first == "help" && execute.length > 1
+      extended_help(execute, contents)
+      second_message(contents)
+    elsif execute.first == "help"
+      base_help(contents)
+      second_message(contents)
+    else 
+      puts "INVALID COMMAND"
       second_message(contents)
     end
     

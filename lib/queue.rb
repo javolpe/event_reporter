@@ -90,6 +90,11 @@ module Queue_commands
         csv << row
       end
     end
+    puts "saved to file"
+  end
+
+  def queue_export_html(execute)
+    puts "nahhhhhhh didn't do this one, next time though for sure"
   end
 
   def check_valid_formatting(execute, contents)
